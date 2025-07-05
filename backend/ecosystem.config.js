@@ -110,7 +110,7 @@ module.exports = {
       node_args: '--max-old-space-size=512',
       
       // Configurações de cwd
-      cwd: '/home/ronaldo/projetos/pessoal/poc-hub-testes/backend',
+      cwd: process.env.PWD || '/home/ubuntu/poc/poc-hub/backend',
       
       // Configurações de interpreter
       interpreter: 'node',
