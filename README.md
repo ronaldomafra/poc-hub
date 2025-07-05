@@ -225,4 +225,4 @@ Para dúvidas ou problemas:
 
 ## 📝 Licença
 
-MIT License - veja o arquivo LICENSE para detalhes. 
+MIT License - veja o arquivo LICENSE para detalhes.
