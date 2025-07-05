@@ -49,10 +49,10 @@ get_user_input() {
     echo "$input"
 }
 
-# Função para verificar se está rodando como root
+# Função para verificar se está rodando como root (permitido)
 check_root() {
     if [ "$EUID" -eq 0 ]; then
-        error "Não execute este script como root"
+        warning "Executando como root - certifique-se de que compreende os riscos de segurança"
     fi
 }
 

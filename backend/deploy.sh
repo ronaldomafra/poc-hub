@@ -272,9 +272,9 @@ show_final_info() {
 main() {
     log "Iniciando deploy da aplicação $APP_NAME..."
     
-    # Verificar se está rodando como root
+    # Verificar se está rodando como root (permitido)
     if [ "$EUID" -eq 0 ]; then
-        error "Não execute este script como root"
+        warning "Executando como root - certifique-se de que compreende os riscos de segurança"
     fi
     
     # Verificar se está no diretório correto

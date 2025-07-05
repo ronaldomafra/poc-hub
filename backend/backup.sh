@@ -339,9 +339,9 @@ restore_backup() {
 main() {
     log "Iniciando backup da aplicação POC Hub Backend..."
     
-    # Verificar se está rodando como root
+    # Verificar se está rodando como root (permitido)
     if [ "$EUID" -eq 0 ]; then
-        error "Não execute este script como root"
+        warning "Executando como root - certifique-se de que compreende os riscos de segurança"
     fi
     
     # Verificar argumentos

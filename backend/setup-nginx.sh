@@ -308,10 +308,10 @@ show_final_info() {
     main() {
         log "Iniciando configuração do Nginx..."
         
-        # Verificar se está rodando como root
-        if [ "$EUID" -eq 0 ]; then
-            error "Não execute este script como root"
-        fi
+            # Verificar se está rodando como root (permitido)
+    if [ "$EUID" -eq 0 ]; then
+        warning "Executando como root - certifique-se de que compreende os riscos de segurança"
+    fi
         
         # Verificar argumentos
         while [[ $# -gt 0 ]]; do
