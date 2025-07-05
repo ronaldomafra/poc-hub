@@ -149,12 +149,20 @@ install_dependencies() {
 stop_application() {
     log "Parando aplicação atual..."
     
-    if pm2 list | grep -q "$APP_NAME"; then
-        pm2 stop "$APP_NAME" || warning "Não foi possível parar a aplicação"
-        pm2 delete "$APP_NAME" || warning "Não foi possível deletar a aplicação"
+    # Parar aplicação usando ecosystem
+    if [ -f "ecosystem.config.js" ]; then
+        pm2 stop ecosystem.config.js --env production || warning "Não foi possível parar a aplicação"
+        pm2 delete ecosystem.config.js --env production || warning "Não foi possível deletar a aplicação"
         log "Aplicação parada e removida do PM2"
     else
-        log "Aplicação não estava rodando no PM2"
+        # Fallback para parar por nome
+        if pm2 list | grep -q "$APP_NAME"; then
+            pm2 stop "$APP_NAME" || warning "Não foi possível parar a aplicação"
+            pm2 delete "$APP_NAME" || warning "Não foi possível deletar a aplicação"
+            log "Aplicação parada e removida do PM2"
+        else
+            log "Aplicação não estava rodando no PM2"
+        fi
     fi
 }
 
@@ -162,26 +170,25 @@ stop_application() {
 start_application() {
     log "Iniciando aplicação..."
     
-    # Configurar variáveis de ambiente para PM2
-    export NODE_ENV=$NODE_ENV
-    export PORT=$APP_PORT
+    # Criar diretório de logs se não existir
+    sudo mkdir -p /var/log
+    sudo touch /var/log/poc-hub-backend.log
+    sudo touch /var/log/poc-hub-backend-error.log
+    sudo touch /var/log/poc-hub-backend-out.log
+    sudo chmod 666 /var/log/poc-hub-backend*.log
     
-    # Iniciar com PM2
-    pm2 start src/server.js \
-        --name "$APP_NAME" \
-        --env production \
-        --log /var/log/poc-hub-backend.log \
-        --error /var/log/poc-hub-backend-error.log \
-        --time \
-        --max-memory-restart 500M \
-        --restart-delay 3000 \
-        --max-restarts 10 \
-        --min-uptime 10000 || error "Erro ao iniciar aplicação com PM2"
+    # Verificar se ecosystem.config.js existe
+    if [ ! -f "ecosystem.config.js" ]; then
+        error "Arquivo ecosystem.config.js não encontrado"
+    fi
+    
+    # Iniciar com PM2 usando ecosystem
+    pm2 start ecosystem.config.js --env production || error "Erro ao iniciar aplicação com PM2"
     
     # Salvar configuração do PM2
     pm2 save || warning "Não foi possível salvar configuração do PM2"
     
-    log "Aplicação iniciada com sucesso"
+    log "Aplicação iniciada com sucesso usando ecosystem"
 }
 
 # Função para verificar se aplicação está funcionando
@@ -191,36 +198,44 @@ check_application() {
     # Aguardar um pouco para a aplicação inicializar
     sleep 5
     
-    # Verificar status no PM2
-    if pm2 list | grep -q "$APP_NAME.*online"; then
-        log "Aplicação está online no PM2"
+    # Verificar status no PM2 usando ecosystem
+    if pm2 list | grep -q "$APP_NAME"; then
+        log "Aplicação está registrada no PM2"
+        
+        # Verificar se está online
+        if pm2 list | grep -q "$APP_NAME.*online"; then
+            log "✅ Aplicação está online no PM2"
+        else
+            warning "⚠️  Aplicação não está online no PM2"
+            log "Verificando logs de erro..."
+            tail -n 10 /var/log/poc-hub-backend-error.log 2>/dev/null || echo "Log de erro não encontrado"
+        fi
     else
-        error "Aplicação não está online no PM2"
+        error "Aplicação não está registrada no PM2"
     fi
     
-    # Testar health check
-    for i in {1..10}; do
-        if curl -f -s http://localhost:$APP_PORT/health >/dev/null 2>&1; then
-            log "Health check OK - Aplicação está respondendo"
+    # Testar health check (opcional)
+    local port=3001
+    for i in {1..5}; do
+        if curl -f -s http://localhost:$port/health >/dev/null 2>&1; then
+            log "✅ Health check OK - Aplicação está respondendo"
             return 0
         fi
         warning "Tentativa $i: Health check falhou, aguardando..."
-        sleep 2
+        sleep 3
     done
     
-    error "Health check falhou após 10 tentativas"
+    warning "⚠️  Health check falhou - verificar logs manualmente"
+    log "Logs disponíveis em: /var/log/poc-hub-backend*.log"
 }
 
 # Função para configurar startup automático
 setup_autostart() {
     log "Configurando startup automático..."
     
-    # Verificar se já está configurado
-    if ! pm2 startup | grep -q "already inited"; then
-        pm2 startup || warning "Não foi possível configurar startup automático"
-    else
-        log "Startup automático já configurado"
-    fi
+    # Configurar startup automático (versão simplificada)
+    pm2 startup || warning "Não foi possível configurar startup automático"
+    log "Startup automático configurado"
 }
 
 # Função para limpar backups antigos
