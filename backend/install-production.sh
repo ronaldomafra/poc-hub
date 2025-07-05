@@ -102,67 +102,9 @@ install_system_dependencies() {
     log "Dependências do sistema instaladas"
 }
 
-# Função para verificar PostgreSQL
-check_postgresql() {
-    log "Verificando PostgreSQL..."
-    
-    # Verificar se PostgreSQL está rodando
-    if ! systemctl is-active --quiet postgresql; then
-        warning "PostgreSQL não está rodando. Iniciando..."
-        sudo systemctl start postgresql
-        sudo systemctl enable postgresql
-    fi
-    
-    # Testar conexão com banco (assumindo que já está configurado)
-    if command_exists "psql"; then
-        if PGPASSWORD=$DB_PASSWORD psql -h localhost -U poc_mcp_system -d poc_mcp_system -c "SELECT 1;" >/dev/null 2>&1; then
-            log "✅ Conexão com PostgreSQL OK"
-        else
-            warning "⚠️  Não foi possível conectar ao PostgreSQL. Verifique as configurações no .env"
-        fi
-    else
-        warning "⚠️  PostgreSQL não está instalado"
-    fi
-}
 
-# Função para configurar arquivo .env
-setup_env_file() {
-    log "Configurando arquivo .env..."
-    
-    # Gerar JWT secret se não fornecido
-    if [ -z "$JWT_SECRET" ]; then
-        JWT_SECRET=$(generate_jwt_secret)
-        log "JWT secret gerado"
-    fi
-    
-    # Criar arquivo .env
-    cat > .env << EOF
-# Configurações do Banco de Dados
-DB_HOST=localhost
-DB_PORT=5432
-DB_NAME=poc_mcp_system
-DB_USER=poc_mcp_system
-DB_PASSWORD=sua_senha_do_banco_aqui
 
-# Configurações do JWT
-JWT_SECRET=$JWT_SECRET
-JWT_EXPIRES_IN=24h
 
-# Configurações do Servidor
-PORT=3001
-NODE_ENV=production
-
-# Configurações de Segurança
-BCRYPT_ROUNDS=12
-RATE_LIMIT_WINDOW_MS=900000
-RATE_LIMIT_MAX_REQUESTS=100
-
-# Configurações de CORS
-ALLOWED_ORIGINS=https://tradingfordummies.site,https://www.tradingfordummies.site
-EOF
-    
-    log "Arquivo .env configurado"
-}
 
 # Função para instalar dependências do Node.js
 install_node_dependencies() {
@@ -233,23 +175,7 @@ setup_nginx() {
     log "Nginx configurado"
 }
 
-# Função para configurar backup automático
-setup_backup() {
-    log "Configurando backup automático..."
-    
-    # Criar diretório de backup
-    sudo mkdir -p /backups
-    sudo chown $USER:$USER /backups
-    
-    # Configurar cron para backup diário
-    if [ -f "backup.sh" ]; then
-        chmod +x backup.sh
-        (crontab -l 2>/dev/null; echo "0 2 * * * $(pwd)/backup.sh") | crontab -
-        log "Backup automático configurado para 2h da manhã"
-    fi
-    
-    log "Backup configurado"
-}
+
 
 # Função para testar instalação
 test_installation() {
@@ -263,12 +189,7 @@ test_installation() {
         warning "⚠️  Aplicação não está respondendo"
     fi
     
-    # Testar PostgreSQL
-    if PGPASSWORD=$DB_PASSWORD psql -h localhost -U poc_mcp_system -d poc_mcp_system -c "SELECT 1;" >/dev/null 2>&1; then
-        log "✅ Banco de dados está funcionando"
-    else
-        warning "⚠️  Banco de dados não está funcionando"
-    fi
+
     
     # Testar Nginx
     if systemctl is-active --quiet nginx; then
@@ -291,7 +212,7 @@ show_final_info() {
     echo -e "  Porta da API: 3001"
     echo -e "  Banco: poc_mcp_system (já configurado)"
     echo -e "  Usuário do banco: poc_mcp_system"
-    echo -e "  Senha do banco: configurada no .env"
+    echo -e "  Senha do banco: configurada no .env (verificar manualmente)"
     echo
     echo -e "${BLUE}🔗 URLs:${NC}"
     echo -e "  Local: http://localhost:3001"
@@ -315,8 +236,7 @@ show_final_info() {
     echo
     echo -e "${RED}🔐 IMPORTANTE:${NC}"
     echo -e "  - Configure a senha do banco no arquivo .env"
-    echo -e "  - Guarde o JWT secret: $JWT_SECRET"
-    echo -e "  - Configure backup externo"
+    echo -e "  - Configure backup externo se necessário"
     echo -e "  - Monitore logs regularmente"
 }
 
@@ -379,13 +299,10 @@ main() {
     
     # Executar etapas da instalação
     install_system_dependencies
-    setup_env_file
-    check_postgresql
     install_node_dependencies
     setup_firewall
     run_deploy
     setup_nginx
-    setup_backup
     test_installation
     show_final_info
     

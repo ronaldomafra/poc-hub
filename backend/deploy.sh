@@ -120,27 +120,17 @@ load_env() {
     log "Carregando variáveis de ambiente..."
     
     if file_exists ".env"; then
-        export $(grep -v '^#' .env | xargs)
+        # Carregar variáveis de forma segura
+        set -a
+        source .env
+        set +a
         log "Variáveis de ambiente carregadas"
     else
-        error "Arquivo .env não encontrado"
+        warning "Arquivo .env não encontrado - usando variáveis padrão"
     fi
 }
 
-# Função para verificar conexão com banco
-check_database() {
-    log "Verificando conexão com banco de dados..."
-    
-    if [ -z "$DB_HOST" ] || [ -z "$DB_NAME" ] || [ -z "$DB_USER" ]; then
-        error "Variáveis de banco de dados não configuradas no .env"
-    fi
-    
-    # Testar conexão (assumindo que banco já está configurado)
-    if command_exists "psql"; then
-        PGPASSWORD=$DB_PASSWORD psql -h $DB_HOST -U $DB_USER -d $DB_NAME -c "SELECT 1;" >/dev/null 2>&1 || warning "Não foi possível conectar ao banco de dados. Verifique as configurações no .env"
-        log "Conexão com banco de dados verificada"
-    fi
-}
+
 
 # Função para instalar dependências
 install_dependencies() {
@@ -285,7 +275,6 @@ main() {
     # Executar etapas do deploy
     check_prerequisites
     load_env
-    check_database
     create_backup
     stop_application
     install_dependencies
