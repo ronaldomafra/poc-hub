@@ -223,8 +223,14 @@ install_dependencies() {
     # Limpar cache do npm
     npm cache clean --force
     
+    # Atualizar package-lock.json se necessário
+    if [ -f "package-lock.json" ]; then
+        log "Atualizando package-lock.json..."
+        npm install --package-lock-only
+    fi
+    
     # Instalar dependências
-    npm ci --only=production
+    npm ci --omit=dev
     log "Dependências instaladas"
 }
 
@@ -321,7 +327,7 @@ server {
     gzip on;
     gzip_vary on;
     gzip_min_length 1024;
-    gzip_proxied expired no-cache no-store private must-revalidate auth;
+    gzip_proxied expired no-cache no-store private auth;
     gzip_types
         text/plain
         text/css
