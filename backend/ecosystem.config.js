@@ -3,12 +3,8 @@ module.exports = {
     {
       name: 'poc-hub-backend',
       script: 'src/server.js',
-      instances: 'max', // Usar todas as CPUs disponíveis
-      exec_mode: 'cluster',
-      env: {
-        NODE_ENV: 'development',
-        PORT: 3001
-      },
+      instances: 2, // Duas instâncias em cluster
+      exec_mode: 'cluster', // Modo cluster para balanceamento de carga
       env_production: {
         NODE_ENV: 'production',
         PORT: 3001
@@ -131,33 +127,18 @@ module.exports = {
       filter_env: ['NODE_ENV'],
       
       // Configurações de instances
-      instances: 'max',
+      instances: 2,
       
       // Configurações de exec_mode
       exec_mode: 'cluster',
       
-      // Configurações de env
-      env: {
-        NODE_ENV: 'development',
-        PORT: 3001,
-        DB_HOST: '69.62.98.55',
-        DB_PORT: 5432,
-        DB_NAME: 'poc_tcix_logmais',
-        DB_USER: 'poc_mcp_system',
-        DB_PASSWORD: 'PocMcpSystem2025',
-        JWT_SECRET: 'NTNv7j0TuYARvmNMmWXo6fKvM4o6nv/aUi9ryX38ZH+L1bkrnD1ObOQ8JAUmHCBq7Iy7otZcyAagBLHVKvvYaIpmMuxmARQ97jUVG16Jkpkp1wXOPsrF9zwew6TpczyHkHgX5EuLg2MeBuiT/qJACs1J0apruOOJCg/gOtkjB4c=',
-        JWT_EXPIRES_IN: '24h',
-        BCRYPT_ROUNDS: 12,
-        RATE_LIMIT_WINDOW_MS: 900000,
-        RATE_LIMIT_MAX_REQUESTS: 100,
-        ALLOWED_ORIGINS: 'https://tradingfordummies.site,https://www.tradingfordummies.site'
-      },
+
       
       // Configurações de env_production
       env_production: {
         NODE_ENV: 'production',
         PORT: 3001,
-        DB_HOST: '69.62.98.55',
+        DB_HOST: 'localhost',
         DB_PORT: 5432,
         DB_NAME: 'poc_tcix_logmais',
         DB_USER: 'poc_mcp_system',
@@ -175,11 +156,11 @@ module.exports = {
   // Configurações de deploy
   deploy: {
     production: {
-      user: 'ronaldo',
+      user: 'root',
       host: 'localhost',
       ref: 'origin/main',
       repo: 'git@github.com:seu-usuario/poc-hub-testes.git',
-      path: '/var/www/poc-hub-backend',
+      path: '/home/ubuntu/poc/poc-hub/backend',
       'pre-deploy-local': '',
       'post-deploy': 'npm install --production && pm2 reload ecosystem.config.js --env production',
       'pre-setup': ''
